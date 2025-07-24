@@ -10,11 +10,19 @@ if(MSVC)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
     
-    # Set MSVC runtime
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    # Let runtime library be set by CMAKE_MSVC_RUNTIME_LIBRARY from command line
+    if(NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+        if(BUILD_SHARED_LIBS)
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+        else()
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        endif()
+    endif()
     
     # Ensure proper DLL export/import
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    if(BUILD_SHARED_LIBS)
+        set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    endif()
 endif()
 
 # Set debug postfix
@@ -47,7 +55,12 @@ set(GIFLIB_SOURCES
 )
 
 # Create the main library
-add_library(gif ${GIFLIB_SOURCES})
+if(BUILD_SHARED_LIBS)
+    add_library(gif SHARED ${GIFLIB_SOURCES})
+else()
+    add_library(gif STATIC ${GIFLIB_SOURCES})
+endif()
+
 add_library(GIFLIB::gif ALIAS gif)
 
 if(MSVC AND BUILD_SHARED_LIBS)
